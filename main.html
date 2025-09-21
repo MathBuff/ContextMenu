@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blank Page</title>
+    <style>
+        body {
+            color: white;
+            background-color: black;
+        }
+        
+        .context-menu-wrapper {
+            min-width: 5ch;
+            position: absolute;
+            display: none;
+            background-color: #1a1a1a;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .context-menu-item {
+            height: auto;
+            display: block;
+            padding: 8px 12px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        
+        .context-menu-item:hover {
+            background-color: #333;
+        }
+        
+        .context-menu-item-selected {
+            background-color: #FF6347;
+            color: white;
+        }
+        
+        .context-menu-item-selected:hover {
+            background-color: #ff8c00;
+        }
+    </style>
+</head>
+<body>
+    <script>
+
+class ContextMenu {
+    constructor() {
+        this.wrapper = document.createElement('div');
+        this.wrapper.className = 'context-menu-wrapper';
+        
+        this.items = [];
+        this.menuSelectionIndex = 0;
+        this.isMenuControlActive = false;
+        this.menuSelection = '';
+    }
+
+//(CLASS_API)==========================================================================================
+
+createItem(texts) {
+    // Ensure texts is always an array
+    if (!Array.isArray(texts)) texts = [texts];
+
+    const createdItems = [];
+
+    texts.forEach(text => {
+        const item = document.createElement('div');
+        item.textContent = text;
+        item.className = 'context-menu-item';
+
+        const itemIndex = this.items.length;
+        item.addEventListener('click', () => {
+            this.menuSelectionIndex = itemIndex;
+            this.fireSelection(itemIndex);
+        });
+
+        this.items.push(item);
+        this.wrapper.appendChild(item);
+        createdItems.push(item);
+    });
+
+    return createdItems.length === 1 ? createdItems[0] : createdItems;
+}
+
+
+//----------------------------------------------------------------------------------------------------
+openMenu(target) {
+    // Hide menu first
+    this.hideMenu();
+    
+    this.positionMenu(target);
+    
+    // Show menu after positioning
+    this.showMenu();
+    this.menuControl()
+}
+
+//----------------------------------------------------------------------------------------------------
+closeMenu(){
+    this.hideMenu();
+    this.isMenuControlActive = false;
+}
+
+//(BACKGROUND_ROUTINES)================================================================================
+
+//----------------------------------------------------------------------------------------------------
+        
+updateSelectionVisual() {
+    // Remove selection class from all items
+    this.items.forEach(item => {
+        item.classList.remove('context-menu-item-selected');
+    });
+    
+    // Add selection class to current index
+    if (this.items[this.menuSelectionIndex]) {
+        this.items[this.menuSelectionIndex].classList.add('context-menu-item-selected');
+    }
+}
+//----------------------------------------------------------------------------------------------------
+fireSelection(index) {
+    if (this.items[index]) {
+        this.menuSelection = this.items[index].textContent;
+        console.log('Selected:', this.menuSelection);
+    }
+}
+
+    
+//----------------------------------------------------------------------------------------------------
+    
+showMenu() {
+    this.wrapper.style.display = 'block';
+}
+//----------------------------------------------------------------------------------------------------
+hideMenu() {
+    this.wrapper.style.display = 'none';
+}
+//----------------------------------------------------------------------------------------------------     
+positionMenu(target) {
+    // First, ensure the menu is in the DOM so we can measure it
+    if (!this.wrapper.parentNode) {
+        document.body.appendChild(this.wrapper);
+    }
+    
+    // Get target element bounds
+    const targetRect = target.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+    
+    // Check if target is visible in viewport
+    const isTargetVisible = (
+        targetRect.top >= 0 &&
+        targetRect.top <= viewportHeight &&
+        targetRect.left >= 0 &&
+        targetRect.left <= viewportWidth
+    );
+    
+    // If target is not visible, scroll to it instantly
+    if (!isTargetVisible) {
+        target.scrollIntoView({ 
+            behavior: 'instant', 
+            block: 'start',
+            inline: 'nearest'
+        });
+    }
+    
+    // Show menu temporarily to measure its dimensions (but keep it hidden)
+    this.wrapper.style.display = 'block';
+    this.wrapper.style.visibility = 'hidden';
+    
+    const updatedTargetRect = target.getBoundingClientRect();
+    const menuRect = this.wrapper.getBoundingClientRect();
+    
+    // Calculate preferred position (below target, left-aligned)
+    let left = updatedTargetRect.left;
+    let top = updatedTargetRect.bottom + 8; // 8px gap below
+    
+    // Check if menu fits below the target
+    if (top + menuRect.height > viewportHeight - 8) {
+        // Position above the target instead
+        top = updatedTargetRect.top - menuRect.height - 8;
+    }
+    
+    // Adjust horizontal position if menu would be clipped
+    if (left + menuRect.width > viewportWidth - 8) {
+        left = viewportWidth - menuRect.width - 8;
+    }
+    
+    // Ensure minimum margins from viewport edges
+    left = Math.max(8, left);
+    top = Math.max(8, Math.min(top, viewportHeight - menuRect.height - 8));
+    
+    // Apply final position
+    this.wrapper.style.left = left + 'px';
+    this.wrapper.style.top = top + 'px';
+    this.wrapper.style.visibility = 'visible';
+}
+//----------------------------------------------------------------------------------------------------
+
+keyboardControls(event) {
+    if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        this.menuSelectionIndex = Math.max(0, this.menuSelectionIndex - 1);
+        this.updateSelectionVisual();
+    } else if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        this.menuSelectionIndex = Math.min(this.items.length - 1, this.menuSelectionIndex + 1);
+        this.updateSelectionVisual();
+    } else if (event.key === 'Enter') {
+        event.preventDefault();
+        this.fireSelection(this.menuSelectionIndex);
+    } else {
+        this.isMenuControlActive = false;
+    }
+}
+
+
+//----------------------------------------------------------------------------------------------------      
+    async menuControl() {
+        this.isMenuControlActive = true;
+        this.menuSelectionIndex = 0;
+        this.updateSelectionVisual();
+        
+        // Keyboard event listener
+        const keydownHandler = (event) => {
+            if (!this.isMenuControlActive) {
+                document.removeEventListener('keydown', keydownHandler);
+                return;
+            }
+            this.keyboardControls(event); // pass the event explicitly
+        };
+
+        
+        document.addEventListener('keydown', keydownHandler);
+        
+    }
+
+}//(End of class)================================================================================
+
+const menu = new ContextMenu();
+menu.createItem('Bananas');
+menu.createItem('Strawberries');
+menu.createItem('Grapes');
+
+// Create div procedurally
+const targetDiv = document.createElement('div');
+targetDiv.textContent = 'Context menu on me';
+document.body.appendChild(targetDiv);
+
+// Attach menu to the div
+menu.openMenu(targetDiv);
+
+// Start menu control for testing
+</script>
+</body>
+</html>
