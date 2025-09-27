@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sliding Menu</title>
+<style>
+body { color:white; background:black; font-family:Arial,sans-serif; margin:0; padding:20px; }
+.slidingmenu-container {
+    position: fixed; right: -350px; top: 0;
+    width: 300px; height: 100vh;
+    background-color:#1a1a1a; box-shadow:-2px 0 10px rgba(0,0,0,0.5);
+    transition: right 0.3s ease; z-index:1001; display:flex; flex-direction:column;
+}
+.slidingmenu-container--open { right: 0; }
+.slidingmenu-overlay {
+    position: fixed; top:0; left:0; width:100vw; height:100vh;
+    background: rgba(0,0,0,0.5); z-index:1000;
+    opacity:0; visibility:hidden; transition: opacity 0.3s, visibility 0.3s;
+}
+.slidingmenu-overlay--open { opacity:1; visibility:visible; }
+.slidingmenu-search-section { padding:15px; border-bottom:1px solid #333; position:relative; }
+.slidingmenu-close-button {
+    position:absolute; top:15px; left:15px; background:none; border:none; color:#ccc;
+    font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+.slidingmenu-close-button:hover { color:#FF6347; }
+.slidingmenu-search-input {
+    width:calc(100% - 50px); padding:8px; background:#333; border:none; color:white;
+    border-radius:4px; margin-left:34px; box-sizing:border-box;
+}
+.slidingmenu-search-input:focus { outline:2px solid #FF6347; }
+.slidingmenu-items-container { flex:1; overflow-y:auto; }
+.slidingmenu-item { padding:12px 15px; cursor:pointer; border-bottom:1px solid #333; white-space:nowrap; }
+.slidingmenu-item:hover { background:#333; }
+.slidingmenu-item--selected { background:#FF6347; color:white; }
+.slidingmenu-item--hidden { display:none; }
+</style>
+</head>
+<body>
+
+<div> The menu should appear once</div>
+
+<script>
+class SlidingMenu {
+    constructor(options=[]) {
+        this.options = options;
+        this.overlay = null;
+        this.container = null;
+        this.searchInput = null;
+        this.itemsContainer = null;
+        this.items = [];
+        this.filteredItems = [];
+        this.selectedIndex = 0;
+        this.keydownHandler = null;
+        this.clickOutsideHandler = null;
+        this.resolve = null;
+    }
+
+    createDOM() {
+        // Overlay
+        this.overlay = document.createElement('div');
+        this.overlay.className = 'slidingmenu-overlay';
+
+        // Container
+        this.container = document.createElement('div');
+        this.container.className = 'slidingmenu-container';
+
+        // Search Section
+        const searchSection = document.createElement('div');
+        searchSection.className = 'slidingmenu-search-section';
+
+        this.searchInput = document.createElement('input');
+        this.searchInput.type = 'text';
+        this.searchInput.placeholder = 'Search...';
+        this.searchInput.className = 'slidingmenu-search-input';
+        searchSection.appendChild(this.searchInput);
+
+        const closeButton = document.createElement('button');
+        closeButton.className = 'slidingmenu-close-button';
+        closeButton.innerHTML = '×';
+        closeButton.addEventListener('click', ()=>this.close(null));
+        searchSection.appendChild(closeButton);
+
+        this.itemsContainer = document.createElement('div');
+        this.itemsContainer.className = 'slidingmenu-items-container';
+
+        this.container.appendChild(searchSection);
+        this.container.appendChild(this.itemsContainer);
+        document.body.appendChild(this.overlay);
+        document.body.appendChild(this.container);
+
+        // Hook up search filtering
+        this.searchInput.addEventListener('input', ()=>this.filterItems());
+    }
+
+    addItems(options) {
+        this.itemsContainer.innerHTML = '';
+        this.items = options.map(opt => {
+            const div = document.createElement('div');
+            div.className = 'slidingmenu-item';
+            div.textContent = opt;
+            div.addEventListener('click', ()=>this.selectItem(opt));
+            this.itemsContainer.appendChild(div);
+            return { text: opt, element: div };
+        });
+        this.filteredItems = [...this.items];
+        this.selectedIndex = 0;
+        this.updateSelection();
+    }
+
+    filterItems() {
+        const q = this.searchInput.value.toLowerCase();
+        this.filteredItems = [];
+        this.items.forEach(item => {
+            const match = item.text.toLowerCase().includes(q);
+            item.element.classList.toggle('slidingmenu-item--hidden', !match);
+            if(match) this.filteredItems.push(item);
+        });
+        this.selectedIndex = 0;
+        this.updateSelection();
+    }
+
+    updateSelection() {
+        this.filteredItems.forEach((item, idx) => {
+            item.element.classList.toggle('slidingmenu-item--selected', idx === this.selectedIndex);
+        });
+        if(this.filteredItems[this.selectedIndex]) {
+            this.filteredItems[this.selectedIndex].element.scrollIntoView({behavior:'smooth', block:'nearest'});
+        }
+    }
+
+    selectItem(option) {
+        if(this.resolve) this.resolve(option);
+        this.close();
+    }
+
+    show(options) {
+        if(!this.container) this.createDOM();
+        this.addItems(options);
+
+        this.isOpen = true;
+        this.overlay.classList.add('slidingmenu-overlay--open');
+        this.container.classList.add('slidingmenu-container--open');
+        this.searchInput.value = '';
+        this.searchInput.focus();
+
+        // Keyboard navigation
+        this.keydownHandler = (e)=>{
+            switch(e.key){
+                case 'ArrowUp': e.preventDefault(); this.selectedIndex=Math.max(0,this.selectedIndex-1); this.updateSelection(); break;
+                case 'ArrowDown': e.preventDefault(); this.selectedIndex=Math.min(this.filteredItems.length-1,this.selectedIndex+1); this.updateSelection(); break;
+                case 'Enter': e.preventDefault(); if(this.filteredItems[this.selectedIndex]) this.selectItem(this.filteredItems[this.selectedIndex].text); break;
+                case 'Escape': e.preventDefault(); this.close(null); break;
+            }
+        };
+        document.addEventListener('keydown', this.keydownHandler);
+
+        // Click outside to close
+        setTimeout(()=>{
+            this.clickOutsideHandler = (e)=>{
+                if(!this.container.contains(e.target)) this.close(null);
+            };
+            document.addEventListener('click', this.clickOutsideHandler);
+        }, 50);
+
+        return new Promise(resolve => this.resolve = resolve);
+    }
+
+    close(returnValue = null) {
+        if(!this.isOpen) return;
+        this.isOpen = false;
+        this.overlay.classList.remove('slidingmenu-overlay--open');
+        this.container.classList.remove('slidingmenu-container--open');
+
+        document.removeEventListener('keydown', this.keydownHandler);
+        if(this.clickOutsideHandler) document.removeEventListener('click', this.clickOutsideHandler);
+        if(this.resolve) this.resolve(returnValue);
+
+        setTimeout(()=>this.destroy(), 300);
+    }
+
+    destroy() {
+        if(this.overlay) this.overlay.remove();
+        if(this.container) this.container.remove();
+        this.overlay = this.container = this.searchInput = this.itemsContainer = null;
+        this.items = this.filteredItems = [];
+        this.selectedIndex = 0;
+        this.resolve = null;
+        this.clickOutsideHandler = null;
+    }
+
+    async fire() {
+        return await this.show(this.options);
+    }
+}
+
+// Usage
+const menu = new SlidingMenu(["apple","orange","pear"]);
+
+async function openMenu() {
+    const selection = await menu.fire();
+    console.log("Selected:", selection);
+}
+
+openMenu(); // call in an async function in order to use.
+
+</script>
+
+</body>
+</html>
+

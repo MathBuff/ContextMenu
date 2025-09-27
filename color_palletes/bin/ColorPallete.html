@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Selection Menu</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+
+        .color-menu {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            background: #1a1a1a;
+            padding: 1.5vw;
+            box-shadow: 0 0.4vw 2vw rgba(0,0,0,0.5);
+            z-index: 10000;
+            min-width: 20vw;
+            max-width: 60vw;
+            opacity: 0;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .color-menu.visible {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
+
+        .color-menu.hidden {
+            display: none;
+        }
+
+        .color-menu .color-row {
+            display: flex;
+            margin-bottom: 0.5vw;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .color-menu .color-square {
+            width: 3vw;
+            height: 3vw;
+            margin: 0.2vw;
+            border: 0.1vw solid #555;
+            background: #333;
+            box-shadow: 0.2vw 0.2vw 0.5vw #000;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.1s ease-in-out;
+            user-select: none;
+        }
+
+        .color-menu .color-square:hover {
+            background: #444;
+        }
+
+        .color-menu .color-square:active,
+        .color-menu .color-square.pressed {
+            box-shadow: inset 0.2vw 0.2vw 0.5vw #000;
+            background: #222;
+            transform: translateY(0.2vw);
+        }
+
+        .color-menu .color-square.highlighted {
+            outline: 0.2vw solid #FF6347;
+            outline-offset: -0.2vw;
+            box-shadow: 0 0 1vw rgba(255, 99, 71, 0.6), 0.2vw 0.2vw 0.5vw #000;
+        }
+
+        .color-menu .color-square.highlighted.pressed {
+            box-shadow: 0 0 1vw rgba(255, 99, 71, 0.6), inset 0.2vw 0.2vw 0.5vw #000;
+        }
+
+        .color-menu .menu-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 1vw;
+            padding: 0.2vw 0.5vw;
+            background: #2d2d2d;
+            height: 2vw;
+            border: 0.1vw solid #666;
+        }
+
+        .color-menu .color-name-display {
+            font-size: 1.2vw;
+            color: white;
+            flex-grow: 1;
+        }
+
+        .color-menu .close-button {
+            background: #ff4444;
+            color: white;
+            border: 0.1vw solid #555;
+            border-radius: 50%;
+            box-shadow: 0.2vw 0.2vw 0.5vw #000;
+            width: 2vw;
+            height: 2vw;
+            cursor: pointer;
+            font-size: 1vw;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 0.8vw;
+            flex-shrink: 0;
+            transition: all 0.1s ease-in-out;
+            user-select: none;
+        }
+
+        .color-menu .close-button:hover {
+            background: #ff5555;
+        }
+
+        .color-menu .close-button:active,
+        .color-menu .close-button.pressed {
+            box-shadow: inset 0.2vw 0.2vw 0.5vw #000;
+            background: #cc3333;
+            transform: translateY(0.2vw);
+        }
+
+        .color-menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .color-menu-overlay.visible {
+            opacity: 1;
+        }
+
+        .color-menu-overlay.hidden {
+            display: none;
+        }
+
+        /* Demo styles */
+        .demo-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #2d2d2d;
+            border-radius: 5px;
+            border: 1px solid #666;
+        }
+        
+        button {
+            background: #444;
+            color: white;
+            border: 1px solid #666;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #555;
+            border-color: #999;
+        }
+        
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            background: #2d2d2d;
+            border-left: 4px solid #FF6347;
+            border-radius: 0 4px 4px 0;
+        }
+
+        /* Media queries for extreme viewport sizes */
+        @media (max-width: 600px) {
+            .color-menu .color-square {
+                width: 6vw;
+                height: 6vw;
+                margin: 0.4vw;
+            }
+            .color-menu .color-name-display {
+                font-size: 2.4vw;
+            }
+            .color-menu .close-button {
+                width: 4vw;
+                height: 4vw;
+                font-size: 2vw;
+            }
+            .color-menu .menu-footer {
+                height: 4vw;
+            }
+        }
+
+        @media (min-width: 1600px) {
+            .color-menu .color-square {
+                width: 2vw;
+                height: 2vw;
+                margin: 0.1vw;
+            }
+            .color-menu .color-name-display {
+                font-size: 0.8vw;
+            }
+            .color-menu .close-button {
+                width: 1.5vw;
+                height: 1.5vw;
+                font-size: 0.7vw;
+            }
+            .color-menu .menu-footer {
+                height: 1.5vw;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>ColorSelectionMenu Demo - Viewport Relative</h1>
+    
+    <div class="demo-section">
+        <h3>How to use:</h3>
+        <ul>
+            <li><strong>Mouse:</strong> Click on any color to select it, or click outside the menu to cancel</li>
+            <li><strong>Keyboard:</strong> Use arrow keys to navigate, Enter to select, Escape to cancel</li>
+            <li><strong>Hover:</strong> Mouse over colors to see their names in tooltips</li>
+            <li><strong>Close:</strong> Click the X button to cancel selection</li>
+            <li><strong>Zoom Test:</strong> Try zooming in/out (Ctrl +/-) - the menu maintains relative size!</li>
+        </ul>
+        
+        <button onclick="openBasicPalette()">Open Basic Colors</button>
+        <button onclick="openExtendedPalette()">Open Extended Palette</button>
+        <button onclick="openEmptyMenu()">Open Empty Menu (should cancel)</button>
+        
+        <div id="result" class="result" style="display: none;">
+            Selected color: <span id="selectedColor"></span>
+            <div id="colorPreview" style="display: inline-block; width: 20px; height: 20px; margin-left: 10px; border: 1px solid #ccc;"></div>
+        </div>
+    </div>
+
+    <script>
+        class ColorSelectionMenu {
+            constructor() {
+                this.columns = [];
+                this.currentRow = 0;
+                this.currentCol = 0;
+                this.isOpen = false;
+                this.resolve = null;
+                
+                // Create DOM elements
+                this.overlay = null;
+                this.menuElement = null;
+                
+                this.createElements();
+                this.bindEvents();
+            }
+            
+            createElements() {
+                // Create overlay
+                this.overlay = document.createElement('div');
+                this.overlay.className = 'color-menu-overlay hidden';
+                
+                // Create menu container
+                this.menuElement = document.createElement('div');
+                this.menuElement.className = 'color-menu hidden';
+                
+                // Create footer
+                this.footer = document.createElement('div');
+                this.footer.className = 'menu-footer';
+                
+                this.colorNameDisplay = document.createElement('div');
+                this.colorNameDisplay.className = 'color-name-display';
+                
+                this.closeButton = document.createElement('button');
+                this.closeButton.className = 'close-button';
+                this.closeButton.innerHTML = '×';
+                this.closeButton.title = 'Close menu';
+                
+                this.footer.appendChild(this.colorNameDisplay);
+                this.footer.appendChild(this.closeButton);
+                this.menuElement.appendChild(this.footer);
+                
+                // Append to body
+                document.body.appendChild(this.overlay);
+                document.body.appendChild(this.menuElement);
+            }
+            
+            bindEvents() {
+                // Keyboard events
+                document.addEventListener('keydown', (e) => {
+                    if (!this.isOpen) return;
+                    
+                    switch(e.key) {
+                        case 'ArrowUp':
+                            e.preventDefault();
+                            this.moveUp();
+                            break;
+                        case 'ArrowDown':
+                            e.preventDefault();
+                            this.moveDown();
+                            break;
+                        case 'ArrowLeft':
+                            e.preventDefault();
+                            this.moveLeft();
+                            break;
+                        case 'ArrowRight':
+                            e.preventDefault();
+                            this.moveRight();
+                            break;
+                        case 'Enter':
+                            e.preventDefault();
+                            this.addPressedEffect();
+                            this.selectCurrentColor();
+                            break;
+                        case 'Escape':
+                            e.preventDefault();
+                            this.addCloseButtonPressedEffect();
+                            this.close(null);
+                            break;
+                    }
+                });
+                
+                // Close button event
+                this.closeButton.addEventListener('click', () => {
+                    this.close(null);
+                });
+                
+                // Overlay click to cancel
+                this.overlay.addEventListener('click', () => {
+                    this.addCloseButtonPressedEffect();
+                    this.close(null);
+                });
+            }
+            
+            addColumn(colors) {
+                this.columns.push(colors);
+                
+                // Reset cursor position when colors are added
+                this.currentRow = 0;
+                this.currentCol = 0;
+                
+                this.renderColumns();
+            }
+            
+            renderColumns() {
+                // Clear existing color squares
+                const existingRows = this.menuElement.querySelectorAll('.color-row');
+                existingRows.forEach(row => row.remove());
+                
+                // Calculate the maximum number of rows needed
+                const maxRows = Math.max(...this.columns.map(col => col.length));
+                
+                // Create rows and populate with colors from columns
+                for (let rowIndex = 0; rowIndex < maxRows; rowIndex++) {
+                    const rowElement = document.createElement('div');
+                    rowElement.className = 'color-row';
+                    
+                    this.columns.forEach((columnColors, colIndex) => {
+                        if (rowIndex < columnColors.length) {
+                            const colorData = columnColors[rowIndex];
+                            const [name, hex] = colorData;
+                            const square = document.createElement('div');
+                            square.className = 'color-square';
+                            square.style.backgroundColor = hex;
+                            square.style.backgroundImage = `linear-gradient(rgba(51, 51, 51, 0.3), rgba(51, 51, 51, 0.3))`;
+                            square.dataset.name = name;
+                            square.dataset.hex = hex;
+                            square.dataset.row = rowIndex;
+                            square.dataset.col = colIndex;
+                            
+                            // Mouse events
+                            square.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                this.currentRow = parseInt(square.dataset.row);
+                                this.currentCol = parseInt(square.dataset.col);
+                                this.addPressedEffect();
+                                setTimeout(() => {
+                                    this.selectCurrentColor();
+                                }, 100);
+                            });
+                            
+                            square.addEventListener('mousedown', (e) => {
+                                e.stopPropagation();
+                                square.classList.add('pressed');
+                            });
+                            
+                            square.addEventListener('mouseup', (e) => {
+                                square.classList.remove('pressed');
+                            });
+                            
+                            square.addEventListener('mouseleave', (e) => {
+                                square.classList.remove('pressed');
+                            });
+                            
+                            square.addEventListener('mouseenter', (e) => {
+                                this.currentRow = parseInt(square.dataset.row);
+                                this.currentCol = parseInt(square.dataset.col);
+                                this.updateHighlight();
+                            });
+                            
+                            rowElement.appendChild(square);
+                        } else {
+                            // Add empty space to maintain column alignment
+                            const emptySquare = document.createElement('div');
+                            emptySquare.className = 'color-square';
+                            emptySquare.style.visibility = 'hidden';
+                            rowElement.appendChild(emptySquare);
+                        }
+                    });
+                    
+                    // Insert before footer
+                    this.menuElement.insertBefore(rowElement, this.footer);
+                }
+                
+                this.updateHighlight();
+            }
+            
+            showTooltip(event, text) {
+                this.tooltip.textContent = text;
+                this.tooltip.classList.add('visible');
+                this.updateTooltipPosition(event);
+            }
+            
+            hideTooltip() {
+                this.tooltip.classList.remove('visible');
+            }
+            
+            updateTooltipPosition(event) {
+                const rect = this.tooltip.getBoundingClientRect();
+                let x = event.clientX + 10;
+                let y = event.clientY - 30;
+                
+                // Keep tooltip in viewport
+                if (x + rect.width > window.innerWidth) {
+                    x = event.clientX - rect.width - 10;
+                }
+                if (y < 0) {
+                    y = event.clientY + 20;
+                }
+                
+                this.tooltip.style.left = x + 'px';
+                this.tooltip.style.top = y + 'px';
+            }
+            
+            moveUp() {
+                if (this.currentRow > 0) {
+                    this.currentRow--;
+                    this.clampPosition();
+                    this.updateHighlight();
+                }
+            }
+            
+            moveDown() {
+                // Calculate max rows for current column
+                const currentColumnLength = this.columns[this.currentCol]?.length || 0;
+                if (this.currentRow < currentColumnLength - 1) {
+                    this.currentRow++;
+                    this.updateHighlight();
+                }
+            }
+            
+            moveLeft() {
+                if (this.currentCol > 0) {
+                    this.currentCol--;
+                    this.clampPosition();
+                    this.updateHighlight();
+                }
+            }
+            
+            moveRight() {
+                if (this.currentCol < this.columns.length - 1) {
+                    this.currentCol++;
+                    this.clampPosition();
+                    this.updateHighlight();
+                }
+            }
+            
+            clampPosition() {
+                // Ensure current position is valid for the current column
+                const currentColumnLength = this.columns[this.currentCol]?.length || 0;
+                if (this.currentRow >= currentColumnLength) {
+                    this.currentRow = Math.max(0, currentColumnLength - 1);
+                }
+            }
+            
+            addPressedEffect() {
+                const currentSquare = this.menuElement.querySelector(
+                    `[data-row="${this.currentRow}"][data-col="${this.currentCol}"]`
+                );
+                
+                if (currentSquare) {
+                    currentSquare.classList.add('pressed');
+                    setTimeout(() => {
+                        currentSquare.classList.remove('pressed');
+                    }, 100);
+                }
+            }
+            
+            addCloseButtonPressedEffect() {
+                this.closeButton.classList.add('pressed');
+                setTimeout(() => {
+                    this.closeButton.classList.remove('pressed');
+                }, 100);
+            }
+            
+            updateHighlight() {
+                // Remove all highlights
+                const squares = this.menuElement.querySelectorAll('.color-square');
+                squares.forEach(square => square.classList.remove('highlighted'));
+                
+                // Add highlight to current position
+                const currentSquare = this.menuElement.querySelector(
+                    `[data-row="${this.currentRow}"][data-col="${this.currentCol}"]`
+                );
+                
+                if (currentSquare) {
+                    currentSquare.classList.add('highlighted');
+                    const colorName = currentSquare.dataset.name;
+                    this.colorNameDisplay.textContent = colorName;
+                } else {
+                    this.colorNameDisplay.textContent = '';
+                }
+            }
+            
+            selectCurrentColor() {
+                if (this.columns.length === 0) {
+                    this.close(null);
+                    return;
+                }
+                
+                const currentColor = this.columns[this.currentCol]?.[this.currentRow];
+                if (currentColor) {
+                    const [name, hex] = currentColor;
+                    this.close(hex);
+                } else {
+                    this.close(null);
+                }
+            }
+            
+            async open() {
+                return new Promise((resolve) => {
+                    if (this.columns.length === 0) {
+                        resolve(null);
+                        return;
+                    }
+                    
+                    this.resolve = resolve;
+                    this.isOpen = true;
+                    
+                    // Show elements and start animation
+                    this.overlay.classList.remove('hidden');
+                    this.menuElement.classList.remove('hidden');
+                    
+                    // Trigger animation on next frame
+                    requestAnimationFrame(() => {
+                        this.overlay.classList.add('visible');
+                        this.menuElement.classList.add('visible');
+                    });
+                    
+                    this.updateHighlight();
+                    
+                    // Focus for keyboard events
+                    this.menuElement.focus();
+                });
+            }
+            
+            close(result) {
+                this.isOpen = false;
+                
+                // Start close animation
+                this.overlay.classList.remove('visible');
+                this.menuElement.classList.remove('visible');
+                
+                // Hide elements after animation
+                setTimeout(() => {
+                    this.overlay.classList.add('hidden');
+                    this.menuElement.classList.add('hidden');
+                }, 150);
+                
+                if (this.resolve) {
+                    this.resolve(result);
+                    this.resolve = null;
+                }
+            }
+        }
+
+        // Demo functionality
+        let menu = new ColorSelectionMenu();
+
+        async function openBasicPalette() {
+            // Clear existing menu
+            defaultColorMenu = new ColorSelectionMenu();
+            
+            // Add basic colors by columns
+            // Column 1: Reds
+            defaultColorMenu.addColumn([
+                ["Red", "#ff0000"],
+                ["Red Burn", "#cc4125"],
+                ["Red Berry", "#980000"],
+                ["Red Blush", "#e06666"]
+            ]);
+
+            // Column 2: Oranges/Browns
+            defaultColorMenu.addColumn([
+                ["Orange", "#ff9900"],
+                ["Brown Fart", "#b45f06"],
+                ["Brown", "#783f04"],
+                ["Peach", "#f9cb9c"],
+                ["Tan", "#D2B48C"]
+            ]);
+
+            // Column 3: Yellows/Golds
+            defaultColorMenu.addColumn([
+                ["Yellow", "#ffff00"],
+                ["Yellow Brass", "#7f6000"],
+                ["Yellow Gold", "#f1c232"],
+                ["Gold", "#FFD700"]
+            ]);
+
+            // Column 4: Greens
+            defaultColorMenu.addColumn([
+                ["Green", "#00ff00"],
+                ["Green Olive", "#38761d"],
+                ["Green Mint", "#93c47d"]
+            ]);
+
+            // Column 5: Cyans
+            defaultColorMenu.addColumn([
+                ["Cyan", "#00ffff"],
+                ["Cyan Submarine", "#76a5af"]
+            ]);
+            
+            // Column 6: Blues
+            defaultColorMenu.addColumn([
+                ["Blue", "#0000ff"],
+                ["Blue Ocean", "#1155cc"],
+                ["Blue Cornflower", "#4a86e8"],
+                ["Blue Sky", "#6fa8dc"]
+            ]);
+
+            // Column 7: Purples
+            defaultColorMenu.addColumn([
+                ["Purple", "#9900ff"],
+                ["Purple Dream", "#8e7cc3"],
+                ["Purple Eggplant", "#351c75"]
+            ]);
+
+            // Column 8: Pinks/Magentas
+            defaultColorMenu.addColumn([
+                ["Magenta", "#ff00ff"],
+                ["Pink", "#c27ba0"],
+                ["Pink Pimp", "#741b47"]
+            ]);
+
+            // Column 9: Neutrals
+            defaultColorMenu.addColumn([
+                ["White", "#ffffff"],
+                ["Gray", "#666666"]
+            ]);
+                        
+            const result = await defaultColorMenu.open();
+            showResult(result);
+        }
+
+        async function openExtendedPalette() {
+            // Clear existing menu
+            menu = new ColorSelectionMenu();
+            
+            // Add multiple columns of colors
+            menu.addColumn([
+                ["Light Red", "#FFB3B3"],
+                ["Red", "#FF0000"],
+                ["Dark Red", "#800000"]
+            ]);
+            
+            menu.addColumn([
+                ["Light Green", "#B3FFB3"],
+                ["Green", "#00FF00"],
+                ["Dark Green", "#008000"]
+            ]);
+            
+            menu.addColumn([
+                ["Light Blue", "#B3B3FF"],
+                ["Blue", "#0000FF"],
+                ["Dark Blue", "#000080"]
+            ]);
+            
+            menu.addColumn([
+                ["Light Yellow", "#FFFFB3"],
+                ["Yellow", "#FFFF00"],
+                ["Dark Yellow", "#808000"]
+            ]);
+            
+            menu.addColumn([
+                ["Orange", "#FFA500"],
+                ["Purple", "#800080"],
+                ["Pink", "#FFC0CB"],
+                ["Cyan", "#00FFFF"],
+                ["Magenta", "#FF00FF"],
+                ["Brown", "#A52A2A"]
+            ]);
+            
+            const result = await menu.open();
+            showResult(result);
+        }
+
+        async function openEmptyMenu() {
+            // Create empty menu
+            const emptyMenu = new ColorSelectionMenu();
+            const result = await emptyMenu.open();
+            showResult(result);
+        }
+
+        function showResult(color) {
+            const resultDiv = document.getElementById('result');
+            const colorSpan = document.getElementById('selectedColor');
+            const preview = document.getElementById('colorPreview');
+            
+            if (color) {
+                colorSpan.textContent = color;
+                preview.style.backgroundColor = color;
+                resultDiv.style.display = 'block';
+            } else {
+                colorSpan.textContent = 'No color selected (cancelled)';
+                preview.style.backgroundColor = 'transparent';
+                resultDiv.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

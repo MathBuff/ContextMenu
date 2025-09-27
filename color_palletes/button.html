@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dark Mode Keyboard Buttons</title>
+<style>
+  body {
+    font-family: sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: #1e1e1e; /* Dark background */
+  }
+
+  .key {
+    display: inline-block;
+    padding: 1em 1.5em;
+    margin: 0.5em;
+    border-radius: 6px;
+    border: 1px solid #555;
+    background: #333;
+    box-shadow: 2px 2px 5px #000; /* subtle shadow for dark mode */
+    font-family: monospace;
+    font-size: 1.2rem;
+    color: #eee;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.1s ease-in-out;
+  }
+
+  /* Hover effect */
+  .key:hover {
+    background: #444;
+  }
+
+  /* Pressed state */
+  .key:active {
+    box-shadow: inset 2px 2px 5px #000;
+    background: #222;
+    transform: translateY(2px);
+  }
+</style>
+</head>
+<body>
+
+<button class="key">A</button>
+<button class="key">Enter</button>
+<button class="key">Shift</button>
+
+</body>
+</html>
+
