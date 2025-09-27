@@ -42,37 +42,32 @@ body {
 
 .columns-container {
     display: flex;
-    flex-direction: row; /* real columns next to each other */
+    flex-direction: row;
     flex-grow: 1;
     justify-content: flex-start;
-    gap: 0.8ch;
-    overflow: auto; /* optional scrolling if too big */
+    gap: 0.2vw;              /* was 0.8ch → scale with viewport now */
+    overflow: auto;
 }
 
 .color-menu .color-column {
     display: flex;
-    flex-direction: column-reverse; /* 👈 flip top <-> bottom */
-    justify-content: flex-start;    /* children will now start from top */
-    gap: 0.5ch;
+    flex-direction: column-reverse;
+    justify-content: flex-start;
+    gap: 0.125vw;              /* was 0.5ch → scale with viewport now */
     align-items: center;
 }
-
-
 
 .color-menu .colorMenuSquare {
     flex: 0 0 auto;
     aspect-ratio: 1;
-    width: 3vw; /* controls square size */
-    min-width: 30px;
-    max-width: 60px;
-    border: 1px solid #555;
-    box-shadow: 1px 1px 3px #000;
+    width: 8%;
+    min-width: 2vw;
+    max-width: 6vw;
+    border: 0.1vw solid #555;
+    box-shadow: 0.1vw 0.1vw 0.3vw #000;
     cursor: pointer;
-    margin: 0.2ch;
-}
-
-.colorMenuSquare{
-    margin: 0.2%;
+    margin: 0.3vw;           /* scales with viewport */
+    transition: transform 0.1s ease;
 }
 
 
@@ -341,9 +336,6 @@ renderColumns() {
 
     this.updateHighlight();
 }
-
-
-
             
             showTooltip(event, text) {
                 this.tooltip.textContent = text;
@@ -517,16 +509,18 @@ renderColumns() {
         // Demo functionality
         let menu = new ColorSelectionMenu();
 
-        async function openBasicPalette() {
-            // Clear existing menu
-            defaultColorMenu = new ColorSelectionMenu();
+        defaultColorMenu = new ColorSelectionMenu();
             
             // Add basic colors by columns
             // Column 1: Reds
             defaultColorMenu.addColumn([
+                ["Red Berry", "#980000"],
+
+            ]);
+
+            defaultColorMenu.addColumn([
                 ["Red", "#ff0000"],
                 ["Red Burn", "#cc4125"],
-                ["Red Berry", "#980000"],
                 ["Red Blush", "#e06666"]
             ]);
 
@@ -536,7 +530,7 @@ renderColumns() {
                 ["Brown Fart", "#b45f06"],
                 ["Brown", "#783f04"],
                 ["Peach", "#f9cb9c"],
-                ["Tan", "#D2B48C"]
+                //["Tan", "#D2B48C"]
             ]);
 
             // Column 3: Yellows/Golds
@@ -544,7 +538,7 @@ renderColumns() {
                 ["Yellow", "#ffff00"],
                 ["Yellow Brass", "#7f6000"],
                 ["Yellow Gold", "#f1c232"],
-                ["Gold", "#FFD700"]
+                //["Gold", "#FFD700"]
             ]);
 
             // Column 4: Greens
@@ -564,10 +558,12 @@ renderColumns() {
             defaultColorMenu.addColumn([
                 ["Blue", "#0000ff"],
                 ["Blue Ocean", "#1155cc"],
+            ]);
+
+            defaultColorMenu.addColumn([
                 ["Blue Cornflower", "#4a86e8"],
                 ["Blue Sky", "#6fa8dc"]
             ]);
-
             // Column 7: Purples
             defaultColorMenu.addColumn([
                 ["Purple", "#9900ff"],
@@ -585,9 +581,71 @@ renderColumns() {
             // Column 9: Neutrals
             defaultColorMenu.addColumn([
                 ["White", "#ffffff"],
-                ["Gray", "#666666"]
+                ["Gray", "#666666"],
+                ["Oil", "#000000"],
+                //----
+                ["Oil", "#000000"],
+                ["Oil", "#000000"],
+                ["Oil", "#000000"],
+                ["Oil", "#000000"],
+                ["Oil", "#000000"],
+                ["Oil", "#000000"],
+                ["Oil", "#000000"],
+                ["Oil", "#000000"],
+                ["Oil", "#000000"],
+                ["Oil", "#000000"],
+                ["Oil", "#000000"],
+                ["Oil", "#000000"],
+                ["Oil", "#000000"],
+                ["Oil", "#000000"],
+                ["Oil", "#000000"]                
             ]);
-                        
+
+            //----
+            defaultColorMenu.addColumn([
+                ["Oil", "#000000"]
+            ]);
+
+            defaultColorMenu.addColumn([
+                ["Oil", "#000000"]
+            ]);
+            defaultColorMenu.addColumn([
+                ["Oil", "#000000"]
+            ]);
+            defaultColorMenu.addColumn([
+                ["Oil", "#000000"]
+            ]);
+            defaultColorMenu.addColumn([
+                ["Oil", "#000000"]
+            ]);
+            defaultColorMenu.addColumn([
+                ["Oil", "#000000"]
+            ]);
+            defaultColorMenu.addColumn([
+                ["Oil", "#000000"]
+            ]);
+            defaultColorMenu.addColumn([
+                ["Oil", "#000000"]
+            ]);
+            defaultColorMenu.addColumn([
+                ["Oil", "#000000"]
+            ]);
+            defaultColorMenu.addColumn([
+                ["Oil", "#000000"]
+            ]);
+            defaultColorMenu.addColumn([
+                ["Oil", "#000000"]
+            ]);
+            defaultColorMenu.addColumn([
+                ["Oil", "#000000"]
+            ]);
+            defaultColorMenu.addColumn([
+                ["Oil", "#000000"]
+            ]);
+
+
+
+        async function openBasicPalette() {       
             const result = await defaultColorMenu.open();
             showResult(result);
         }
