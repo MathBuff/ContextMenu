@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Color Selection Menu</title>
     <style>
-body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    background: #1a1a1a;
-    color: white;
-}
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0px;
+            background: #1a1a1a;
+            color: white;
+        }
+/*---------------------------------------------------------------------------------*/
 
 .color-menu {
     display: flex;
@@ -44,32 +45,44 @@ body {
     display: flex;
     flex-direction: row;
     flex-grow: 1;
-    justify-content: flex-start;
-    gap: 0.2vw;              /* was 0.8ch → scale with viewport now */
-    overflow: auto;
+    justify-content: center;
+    align-items: stretch;
+    gap: 0.2vw;
+    overflow: hidden; /* stop bleed + scrollbar */
+    width: 100%;
+    height: 100%;
 }
 
 .color-menu .color-column {
+    flex: 1 1 0; /* all columns share available space */
     display: flex;
     flex-direction: column-reverse;
     justify-content: flex-start;
-    gap: 0.125vw;              /* was 0.5ch → scale with viewport now */
     align-items: center;
+    gap: 0.125vw;
+    max-height: 100%;
+    overflow: hidden; /* prevent content bleed */
 }
 
 .color-menu .colorMenuSquare {
-    flex: 0 0 auto;
-    aspect-ratio: 1;
-    width: 8%;
-    min-width: 2vw;
-    max-width: 6vw;
+    /* REMOVE flex-grow, so it doesn't stretch vertically */
+    flex: 0 0 auto; 
+
+    /* Ensure perfect square */
+    aspect-ratio: 1 / 1;
+
+    /* Match column width */
+    width: 100%; 
+    max-width: 100%;
+
     border: 0.1vw solid #555;
     box-shadow: 0.1vw 0.1vw 0.3vw #000;
     cursor: pointer;
-    margin: 0.3vw;           /* scales with viewport */
+    margin: 0.15vw; /* keeps spacing consistent */
     transition: transform 0.1s ease;
+    background: #333;
+    box-sizing: border-box;
 }
-
 
 .color-menu .colorMenuSquare:hover {
     background: #444;
@@ -89,8 +102,12 @@ body {
 }
 
 .color-menu .colorMenuSquare.highlighted.pressed {
-    box-shadow: 0 0 1vw rgba(255, 99, 71, 0.6), inset 0.2vw 0.2vw 0.5vw #000;
+    box-shadow: 
+        0 0 1vw rgba(255, 99, 71, 0.6),   /* glow */
+        0.2vw 0.2vw 0.5vw #000,           /* outer shadow */
+        inset 0.2vw 0.2vw 0.5vw #000;     /* inner pressed shadow */
 }
+
 
 .color-menu .menu-footer {
     display: flex;
@@ -133,12 +150,25 @@ body {
     background: #ff5555;
 }
 
-.color-menu .colorMenuCloseButton:active,
-.color-menu .colorMenuCloseButton.pressed {
-    box-shadow: inset 0.2vw 0.2vw 0.5vw #000;
-    background: #cc3333;
+/* Color squares pressed/held look */
+.color-menu .colorMenuSquare:active,
+.color-menu .colorMenuSquare.pressed {
+    /* Keep the normal drop shadow AND add the inset */
+    box-shadow: 0.1vw 0.1vw 0.3vw #000, inset 0.2vw 0.2vw 0.5vw #000;
+    background: #222;
     transform: translateY(0.2vw);
 }
+
+/* Close button pressed/held look */
+.color-menu .colorMenuCloseButton:active,
+.color-menu .colorMenuCloseButton.pressed {
+    box-shadow: 0.1vw 0.1vw 0.3vw #000, inset 0.2vw 0.2vw 0.5vw #000;
+    background: #cc0000;
+    transform: translateY(0.2vw);
+}
+
+
+
 
 .color-menu-overlay {
     position: fixed;
@@ -161,6 +191,7 @@ body {
 }
 
 
+/*---------------------------------------------------------------------------------*/
     </style>
 </head>
 <body>
@@ -185,486 +216,489 @@ body {
     </div>
 
     <script>
-        class ColorSelectionMenu {
-            constructor() {
-                this.columns = [];
-                this.currentRow = 0;
-                this.currentCol = 0;
-                this.isOpen = false;
-                this.resolve = null;
-                
-                // Create DOM elements
-                this.overlay = null;
-                this.menuElement = null;
-                
-                this.createElements();
-                this.bindEvents();
-            }
+//---------------------------------------------------------------------------------
+class ColorSelectionMenu {
+    constructor() {
+        this.columns = [];
+        this.currentRow = 0;
+        this.currentCol = 0;
+        this.isOpen = false;
+        this.resolve = null;
+        
+        // Create DOM elements
+        this.overlay = null;
+        this.menuElement = null;
+        
+        this.createElements();
+        this.bindEvents();
+    }
+    
+    createElements() {
+        // Create overlay
+        this.overlay = document.createElement('div');
+        this.overlay.className = 'color-menu-overlay hidden';
+        
+        // Create menu container
+        this.menuElement = document.createElement('div');
+        this.menuElement.className = 'color-menu hidden';
+        
+        // Create rows container
+        this.rowsContainer = document.createElement('div');
+        this.rowsContainer.className = 'rows-container';
+        this.menuElement.appendChild(this.rowsContainer);
+        
+        // Create footer
+        this.footer = document.createElement('div');
+        this.footer.className = 'menu-footer';
+        
+        this.colorNameDisplay = document.createElement('div');
+        this.colorNameDisplay.className = 'color-name-display';
+        
+        this.closeButton = document.createElement('button');
+        this.closeButton.className = 'colorMenuCloseButton';
+        this.closeButton.innerHTML = '×';
+        this.closeButton.title = 'Close menu';
+        
+        this.footer.appendChild(this.colorNameDisplay);
+        this.footer.appendChild(this.closeButton);
+        this.menuElement.appendChild(this.footer);
+        
+        // Append to body
+        document.body.appendChild(this.overlay);
+        document.body.appendChild(this.menuElement);
+    }
+
+    
+    bindEvents() {
+        // Keyboard events
+        document.addEventListener('keydown', (e) => {
+            if (!this.isOpen) return;
             
-            createElements() {
-                // Create overlay
-                this.overlay = document.createElement('div');
-                this.overlay.className = 'color-menu-overlay hidden';
-                
-                // Create menu container
-                this.menuElement = document.createElement('div');
-                this.menuElement.className = 'color-menu hidden';
-                
-                // Create rows container
-                this.rowsContainer = document.createElement('div');
-                this.rowsContainer.className = 'rows-container';
-                this.menuElement.appendChild(this.rowsContainer);
-                
-                // Create footer
-                this.footer = document.createElement('div');
-                this.footer.className = 'menu-footer';
-                
-                this.colorNameDisplay = document.createElement('div');
-                this.colorNameDisplay.className = 'color-name-display';
-                
-                this.closeButton = document.createElement('button');
-                this.closeButton.className = 'colorMenuCloseButton';
-                this.closeButton.innerHTML = '×';
-                this.closeButton.title = 'Close menu';
-                
-                this.footer.appendChild(this.colorNameDisplay);
-                this.footer.appendChild(this.closeButton);
-                this.menuElement.appendChild(this.footer);
-                
-                // Append to body
-                document.body.appendChild(this.overlay);
-                document.body.appendChild(this.menuElement);
+            switch(e.key) {
+                case 'i':
+                case 'ArrowUp':
+                    e.preventDefault();
+                    this.moveUp();
+                    break;
+                case 'k':
+                case 'ArrowDown':
+                    e.preventDefault();
+                    this.moveDown();
+                    break;
+                case 'j':
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    this.moveLeft();
+                    break;
+                case 'l':                
+                case 'ArrowRight':
+                    e.preventDefault();
+                    this.moveRight();
+                    break;
+                case 'Home':
+                    e.preventDefault();
+                    this.moveHome();
+                    break;
+                case 'End':
+                    e.preventDefault();
+                    this.moveEnd();
+                    break;
+                case 'PageUp':
+                    e.preventDefault();
+                    this.movePageUp();
+                    break;
+                case 'PageDown':
+                    e.preventDefault();
+                    this.movePageDown();
+                    break;
+                case 'Enter':
+                    e.preventDefault();
+                    this.addPressedEffect();
+                    this.selectCurrentColor();
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    this.closeWithPressEffect();
+                    break;
+
             }
 
-            
-            bindEvents() {
-                // Keyboard events
-                document.addEventListener('keydown', (e) => {
-                    if (!this.isOpen) return;
-                    
-                    switch(e.key) {
-                        case 'ArrowUp':
-                            e.preventDefault();
-                            this.moveUp();
-                            break;
-                        case 'ArrowDown':
-                            e.preventDefault();
-                            this.moveDown();
-                            break;
-                        case 'ArrowLeft':
-                            e.preventDefault();
-                            this.moveLeft();
-                            break;
-                        case 'ArrowRight':
-                            e.preventDefault();
-                            this.moveRight();
-                            break;
-                        case 'Enter':
-                            e.preventDefault();
-                            this.addPressedEffect();
-                            this.selectCurrentColor();
-                            break;
-                        case 'Escape':
-                            e.preventDefault();
-                            this.addCloseButtonPressedEffect();
-                            this.close(null);
-                            break;
-                    }
+        });
+        
+        // Close button event
+        this.closeButton.addEventListener('click', () => {
+            this.close(null);
+        });
+        
+        // Overlay click to cancel
+        this.overlay.addEventListener('click', () => {
+            this.closeWithPressEffect();
+            //this.close(null);
+        });
+    }
+    
+    addColumn(colors) {
+        this.columns.push(colors);
+        
+        // Reset cursor position when colors are added
+        this.currentRow = 0;
+        this.currentCol = 0;
+        
+        this.renderColumns();
+    }
+    
+    renderColumns() {
+        // Clear old content
+        this.rowsContainer.innerHTML = "";
+        this.rowsContainer.className = "columns-container";
+
+        // For each column
+        this.columns.forEach((columnColors, colIndex) => {
+            const colElement = document.createElement("div");
+            colElement.className = "color-column";
+
+            columnColors.forEach(([name, hex], rowIndex) => {
+                const square = document.createElement("div");
+                square.className = "colorMenuSquare";
+                square.style.backgroundColor = hex;
+                square.dataset.name = name;
+                square.dataset.hex = hex;
+                square.dataset.row = rowIndex;
+                square.dataset.col = colIndex;
+
+                // Mouse events
+                square.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    this.currentRow = rowIndex;
+                    this.currentCol = colIndex;
+                    this.addPressedEffect();
+                    setTimeout(() => this.selectCurrentColor(), 100);
                 });
-                
-                // Close button event
-                this.closeButton.addEventListener('click', () => {
-                    this.close(null);
+
+                square.addEventListener("mouseenter", () => {
+                    this.currentRow = rowIndex;
+                    this.currentCol = colIndex;
+                    this.updateHighlight();
                 });
-                
-                // Overlay click to cancel
-                this.overlay.addEventListener('click', () => {
-                    this.addCloseButtonPressedEffect();
-                    this.close(null);
-                });
-            }
-            
-            addColumn(colors) {
-                this.columns.push(colors);
-                
-                // Reset cursor position when colors are added
-                this.currentRow = 0;
-                this.currentCol = 0;
-                
-                this.renderColumns();
-            }
-            
-renderColumns() {
-    // Clear old content
-    this.rowsContainer.innerHTML = "";
-    this.rowsContainer.className = "columns-container";
 
-    // For each column
-    this.columns.forEach((columnColors, colIndex) => {
-        const colElement = document.createElement("div");
-        colElement.className = "color-column";
-
-        columnColors.forEach(([name, hex], rowIndex) => {
-            const square = document.createElement("div");
-            square.className = "colorMenuSquare";
-            square.style.backgroundColor = hex;
-            square.dataset.name = name;
-            square.dataset.hex = hex;
-            square.dataset.row = rowIndex;
-            square.dataset.col = colIndex;
-
-            // Mouse events
-            square.addEventListener("click", (e) => {
-                e.stopPropagation();
-                this.currentRow = rowIndex;
-                this.currentCol = colIndex;
-                this.addPressedEffect();
-                setTimeout(() => this.selectCurrentColor(), 100);
+                colElement.appendChild(square);
             });
 
-            square.addEventListener("mouseenter", () => {
-                this.currentRow = rowIndex;
-                this.currentCol = colIndex;
-                this.updateHighlight();
-            });
-
-            colElement.appendChild(square);
+            this.rowsContainer.appendChild(colElement);
         });
 
-        this.rowsContainer.appendChild(colElement);
-    });
+        this.updateHighlight();
+    }
+    
+    showTooltip(event, text) {
+        this.tooltip.textContent = text;
+        this.tooltip.classList.add('visible');
+        this.updateTooltipPosition(event);
+    }
+    
+    hideTooltip() {
+        this.tooltip.classList.remove('visible');
+    }
+    
+    updateTooltipPosition(event) {
+        const rect = this.tooltip.getBoundingClientRect();
+        let x = event.clientX + 10;
+        let y = event.clientY - 30;
+        
+        // Keep tooltip in viewport
+        if (x + rect.width > window.innerWidth) {
+            x = event.clientX - rect.width - 10;
+        }
+        if (y < 0) {
+            y = event.clientY + 20;
+        }
+        
+        this.tooltip.style.left = x + 'px';
+        this.tooltip.style.top = y + 'px';
+    }
+    
+    moveDown() {
+        if (this.currentRow > 0) {
+            this.currentRow--;
+            this.clampPosition();
+            this.updateHighlight();
+        }
+    }
+    
+    moveUp() {
+        // Calculate max rows for current column
+        const currentColumnLength = this.columns[this.currentCol]?.length || 0;
+        if (this.currentRow < currentColumnLength - 1) {
+            this.currentRow++;
+            this.updateHighlight();
+        }
+    }
+    
+    moveLeft() {
+        if (this.currentCol > 0) {
+            this.currentCol--;
+            this.clampPosition();
+            this.updateHighlight();
+        }
+    }
+    
+    moveRight() {
+        if (this.currentCol < this.columns.length - 1) {
+            this.currentCol++;
+            this.clampPosition();
+            this.updateHighlight();
+        }
+    }
 
-    this.updateHighlight();
+    moveHome() {
+        // Jump to farthest left column, same row if possible
+        this.currentCol = 0;
+        this.clampPosition();
+        this.updateHighlight();
+    }
+
+    moveEnd() {
+        // Jump to farthest right column, same row if possible
+        this.currentCol = this.columns.length - 1;
+        this.clampPosition();
+        this.updateHighlight();
+    }
+
+    movePageUp() {
+        // Jump to the top (highest row index) of current column
+        const currentColumnLength = this.columns[this.currentCol]?.length || 0;
+        if (currentColumnLength > 0) {
+            this.currentRow = currentColumnLength - 1;
+            this.updateHighlight();
+        }
+    }
+
+    movePageDown() {
+        // Jump to the bottom (row 0) of current column
+        this.currentRow = 0;
+        this.updateHighlight();
+    }
+
+
+    
+    clampPosition() {
+        // Ensure current position is valid for the current column
+        const currentColumnLength = this.columns[this.currentCol]?.length || 0;
+        if (this.currentRow >= currentColumnLength) {
+            this.currentRow = Math.max(0, currentColumnLength - 1);
+        }
+    }
+    
+    addPressedEffect() {
+        const currentSquare = this.menuElement.querySelector(
+            `[data-row="${this.currentRow}"][data-col="${this.currentCol}"]`
+        );
+        
+        if (currentSquare) {
+            currentSquare.classList.add('pressed');
+            setTimeout(() => {
+                currentSquare.classList.remove('pressed');
+            }, 100);
+        }
+    }
+
+    closeWithPressEffect() {
+        this.closeButton.classList.add('pressed');
+        setTimeout(() => {
+            this.closeButton.classList.remove('pressed');
+            this.close(null);
+        }, 100);
+    }
+    
+    addCloseButtonPressedEffect() {
+        this.closeButton.classList.add('pressed');
+        setTimeout(() => {
+            this.closeButton.classList.remove('pressed');
+        }, 100);
+    }
+    
+    updateHighlight() {
+        // Remove all highlights
+        const squares = this.menuElement.querySelectorAll('.colorMenuSquare');
+        squares.forEach(square => square.classList.remove('highlighted'));
+        
+        // Add highlight to current position
+        const currentSquare = this.menuElement.querySelector(
+            `[data-row="${this.currentRow}"][data-col="${this.currentCol}"]`
+        );
+        
+        if (currentSquare) {
+            currentSquare.classList.add('highlighted');
+            const colorName = currentSquare.dataset.name;
+            this.colorNameDisplay.textContent = colorName;
+        } else {
+            this.colorNameDisplay.textContent = '';
+        }
+    }
+    
+    selectCurrentColor() {
+        if (this.columns.length === 0) {
+            this.close(null);
+            return;
+        }
+        
+        const currentColor = this.columns[this.currentCol]?.[this.currentRow];
+        if (currentColor) {
+            const [name, hex] = currentColor;
+            this.close(hex);
+        } else {
+            this.close(null);
+        }
+    }
+    
+    async open() {
+        return new Promise((resolve) => {
+            if (this.columns.length === 0) {
+                resolve(null);
+                return;
+            }
+            
+            this.resolve = resolve;
+            this.isOpen = true;
+            
+            // Show elements and start animation
+            this.overlay.classList.remove('hidden');
+            this.menuElement.classList.remove('hidden');
+            
+            // Trigger animation on next frame
+            requestAnimationFrame(() => {
+                this.overlay.classList.add('visible');
+                this.menuElement.classList.add('visible');
+            });
+            
+            this.updateHighlight();
+            
+            // Focus for keyboard events
+            this.menuElement.focus();
+        });
+    }
+    
+    close(result) {
+        this.isOpen = false;
+        
+        // Start close animation
+        this.overlay.classList.remove('visible');
+        this.menuElement.classList.remove('visible');
+        
+        // Hide elements after animation
+        setTimeout(() => {
+            this.overlay.classList.add('hidden');
+            this.menuElement.classList.add('hidden');
+        }, 150);
+        
+        if (this.resolve) {
+            this.resolve(result);
+            this.resolve = null;
+        }
+    }
 }
-            
-            showTooltip(event, text) {
-                this.tooltip.textContent = text;
-                this.tooltip.classList.add('visible');
-                this.updateTooltipPosition(event);
-            }
-            
-            hideTooltip() {
-                this.tooltip.classList.remove('visible');
-            }
-            
-            updateTooltipPosition(event) {
-                const rect = this.tooltip.getBoundingClientRect();
-                let x = event.clientX + 10;
-                let y = event.clientY - 30;
-                
-                // Keep tooltip in viewport
-                if (x + rect.width > window.innerWidth) {
-                    x = event.clientX - rect.width - 10;
-                }
-                if (y < 0) {
-                    y = event.clientY + 20;
-                }
-                
-                this.tooltip.style.left = x + 'px';
-                this.tooltip.style.top = y + 'px';
-            }
-            
-            moveDown() {
-                if (this.currentRow > 0) {
-                    this.currentRow--;
-                    this.clampPosition();
-                    this.updateHighlight();
-                }
-            }
-            
-            moveUp() {
-                // Calculate max rows for current column
-                const currentColumnLength = this.columns[this.currentCol]?.length || 0;
-                if (this.currentRow < currentColumnLength - 1) {
-                    this.currentRow++;
-                    this.updateHighlight();
-                }
-            }
-            
-            moveLeft() {
-                if (this.currentCol > 0) {
-                    this.currentCol--;
-                    this.clampPosition();
-                    this.updateHighlight();
-                }
-            }
-            
-            moveRight() {
-                if (this.currentCol < this.columns.length - 1) {
-                    this.currentCol++;
-                    this.clampPosition();
-                    this.updateHighlight();
-                }
-            }
-            
-            clampPosition() {
-                // Ensure current position is valid for the current column
-                const currentColumnLength = this.columns[this.currentCol]?.length || 0;
-                if (this.currentRow >= currentColumnLength) {
-                    this.currentRow = Math.max(0, currentColumnLength - 1);
-                }
-            }
-            
-            addPressedEffect() {
-                const currentSquare = this.menuElement.querySelector(
-                    `[data-row="${this.currentRow}"][data-col="${this.currentCol}"]`
-                );
-                
-                if (currentSquare) {
-                    currentSquare.classList.add('pressed');
-                    setTimeout(() => {
-                        currentSquare.classList.remove('pressed');
-                    }, 100);
-                }
-            }
-            
-            addCloseButtonPressedEffect() {
-                this.closeButton.classList.add('pressed');
-                setTimeout(() => {
-                    this.closeButton.classList.remove('pressed');
-                }, 100);
-            }
-            
-            updateHighlight() {
-                // Remove all highlights
-                const squares = this.menuElement.querySelectorAll('.colorMenuSquare');
-                squares.forEach(square => square.classList.remove('highlighted'));
-                
-                // Add highlight to current position
-                const currentSquare = this.menuElement.querySelector(
-                    `[data-row="${this.currentRow}"][data-col="${this.currentCol}"]`
-                );
-                
-                if (currentSquare) {
-                    currentSquare.classList.add('highlighted');
-                    const colorName = currentSquare.dataset.name;
-                    this.colorNameDisplay.textContent = colorName;
-                } else {
-                    this.colorNameDisplay.textContent = '';
-                }
-            }
-            
-            selectCurrentColor() {
-                if (this.columns.length === 0) {
-                    this.close(null);
-                    return;
-                }
-                
-                const currentColor = this.columns[this.currentCol]?.[this.currentRow];
-                if (currentColor) {
-                    const [name, hex] = currentColor;
-                    this.close(hex);
-                } else {
-                    this.close(null);
-                }
-            }
-            
-            async open() {
-                return new Promise((resolve) => {
-                    if (this.columns.length === 0) {
-                        resolve(null);
-                        return;
-                    }
-                    
-                    this.resolve = resolve;
-                    this.isOpen = true;
-                    
-                    // Show elements and start animation
-                    this.overlay.classList.remove('hidden');
-                    this.menuElement.classList.remove('hidden');
-                    
-                    // Trigger animation on next frame
-                    requestAnimationFrame(() => {
-                        this.overlay.classList.add('visible');
-                        this.menuElement.classList.add('visible');
-                    });
-                    
-                    this.updateHighlight();
-                    
-                    // Focus for keyboard events
-                    this.menuElement.focus();
-                });
-            }
-            
-            close(result) {
-                this.isOpen = false;
-                
-                // Start close animation
-                this.overlay.classList.remove('visible');
-                this.menuElement.classList.remove('visible');
-                
-                // Hide elements after animation
-                setTimeout(() => {
-                    this.overlay.classList.add('hidden');
-                    this.menuElement.classList.add('hidden');
-                }, 150);
-                
-                if (this.resolve) {
-                    this.resolve(result);
-                    this.resolve = null;
-                }
-            }
-        }
+//---------------------------------------------------------------------------------------
 
-        // Demo functionality
-        let menu = new ColorSelectionMenu();
+// Demo Loading functionality
+let menu = new ColorSelectionMenu();
 
-        defaultColorMenu = new ColorSelectionMenu();
-            
-            // Add basic colors by columns
-            // Column 1: Reds
-            defaultColorMenu.addColumn([
-                ["Red Berry", "#980000"],
+defaultColorMenu = new ColorSelectionMenu();
 
-            ]);
+// Add basic colors by columns
+// Column 1: Reds
+defaultColorMenu.addColumn([
+    ["Red Berry", "#980000"],
 
-            defaultColorMenu.addColumn([
-                ["Red", "#ff0000"],
-                ["Red Burn", "#cc4125"],
-                ["Red Blush", "#e06666"]
-            ]);
+]);
 
-            // Column 2: Oranges/Browns
-            defaultColorMenu.addColumn([
-                ["Orange", "#ff9900"],
-                ["Brown Fart", "#b45f06"],
-                ["Brown", "#783f04"],
-                ["Peach", "#f9cb9c"],
-                //["Tan", "#D2B48C"]
-            ]);
+defaultColorMenu.addColumn([
+    ["Red", "#ff0000"],
+    ["Red Burn", "#cc4125"],
+    ["Red Blush", "#e06666"]
+]);
 
-            // Column 3: Yellows/Golds
-            defaultColorMenu.addColumn([
-                ["Yellow", "#ffff00"],
-                ["Yellow Brass", "#7f6000"],
-                ["Yellow Gold", "#f1c232"],
-                //["Gold", "#FFD700"]
-            ]);
+defaultColorMenu.addColumn([
+    ["Orange", "#ff9900"],
+    ["Brown Fart", "#b45f06"],
+    ["Brown", "#783f04"],
+    ["Peach", "#f9cb9c"],
+    //["Tan", "#D2B48C"]
+]);
 
-            // Column 4: Greens
-            defaultColorMenu.addColumn([
-                ["Green", "#00ff00"],
-                ["Green Olive", "#38761d"],
-                ["Green Mint", "#93c47d"]
-            ]);
+// Column 3: Yellows/Golds
+defaultColorMenu.addColumn([
+    ["Yellow", "#ffff00"],
+    ["Yellow Gold", "#f1c232"],
+    ["Yellow Brass", "#7f6000"],
 
-            // Column 5: Cyans
-            defaultColorMenu.addColumn([
-                ["Cyan", "#00ffff"],
-                ["Cyan Submarine", "#76a5af"]
-            ]);
-            
-            // Column 6: Blues
-            defaultColorMenu.addColumn([
-                ["Blue", "#0000ff"],
-                ["Blue Ocean", "#1155cc"],
-            ]);
+    //["Gold", "#FFD700"]
+]);
 
-            defaultColorMenu.addColumn([
-                ["Blue Cornflower", "#4a86e8"],
-                ["Blue Sky", "#6fa8dc"]
-            ]);
-            // Column 7: Purples
-            defaultColorMenu.addColumn([
-                ["Purple", "#9900ff"],
-                ["Purple Dream", "#8e7cc3"],
-                ["Purple Eggplant", "#351c75"]
-            ]);
+// Column 4: Greens
+defaultColorMenu.addColumn([
+    ["Green", "#00ff00"],
+    ["Green Olive", "#38761d"],
+    ["Green Mint", "#93c47d"]
+]);
 
-            // Column 8: Pinks/Magentas
-            defaultColorMenu.addColumn([
-                ["Magenta", "#ff00ff"],
-                ["Pink", "#c27ba0"],
-                ["Pink Pimp", "#741b47"]
-            ]);
+// Column 5: Cyans
+defaultColorMenu.addColumn([
+    ["Cyan", "#00ffff"],
+    ["Cyan Submarine", "#76a5af"]
+]);
 
-            // Column 9: Neutrals
-            defaultColorMenu.addColumn([
-                ["White", "#ffffff"],
-                ["Gray", "#666666"],
-                ["Oil", "#000000"],
-                //----
-                ["Oil", "#000000"],
-                ["Oil", "#000000"],
-                ["Oil", "#000000"],
-                ["Oil", "#000000"],
-                ["Oil", "#000000"],
-                ["Oil", "#000000"],
-                ["Oil", "#000000"],
-                ["Oil", "#000000"],
-                ["Oil", "#000000"],
-                ["Oil", "#000000"],
-                ["Oil", "#000000"],
-                ["Oil", "#000000"],
-                ["Oil", "#000000"],
-                ["Oil", "#000000"],
-                ["Oil", "#000000"]                
-            ]);
+// Column 6: Blues
+defaultColorMenu.addColumn([
+    ["Blue", "#0000ff"],
+    ["Blue Ocean", "#1155cc"],
+]);
 
-            //----
-            defaultColorMenu.addColumn([
-                ["Oil", "#000000"]
-            ]);
+defaultColorMenu.addColumn([
+    ["Blue Cornflower", "#4a86e8"],
+    ["Blue Sky", "#6fa8dc"]
+]);
+// Column 7: Purples
+defaultColorMenu.addColumn([
+    ["Purple", "#9900ff"],
+    ["Purple Dream", "#8e7cc3"],
+    ["Purple Eggplant", "#351c75"]
+]);
 
-            defaultColorMenu.addColumn([
-                ["Oil", "#000000"]
-            ]);
-            defaultColorMenu.addColumn([
-                ["Oil", "#000000"]
-            ]);
-            defaultColorMenu.addColumn([
-                ["Oil", "#000000"]
-            ]);
-            defaultColorMenu.addColumn([
-                ["Oil", "#000000"]
-            ]);
-            defaultColorMenu.addColumn([
-                ["Oil", "#000000"]
-            ]);
-            defaultColorMenu.addColumn([
-                ["Oil", "#000000"]
-            ]);
-            defaultColorMenu.addColumn([
-                ["Oil", "#000000"]
-            ]);
-            defaultColorMenu.addColumn([
-                ["Oil", "#000000"]
-            ]);
-            defaultColorMenu.addColumn([
-                ["Oil", "#000000"]
-            ]);
-            defaultColorMenu.addColumn([
-                ["Oil", "#000000"]
-            ]);
-            defaultColorMenu.addColumn([
-                ["Oil", "#000000"]
-            ]);
-            defaultColorMenu.addColumn([
-                ["Oil", "#000000"]
-            ]);
+// Column 8: Pinks/Magentas
+defaultColorMenu.addColumn([
+    ["Magenta", "#ff00ff"],
+    ["Pink", "#c27ba0"],
+    ["Pink Pimp", "#741b47"]
+]);
 
+// Column 9: Neutrals
+defaultColorMenu.addColumn([
+    ["White", "#ffffff"],
+    ["Gray", "#666666"],
+    ["Oil", "#000000"],
+]);
+//---------------------------------------------------------------------------------------
+//Demo Display system
+async function openBasicPalette() {       
+    const result = await defaultColorMenu.open();
+    showResult(result);
+}
 
-
-        async function openBasicPalette() {       
-            const result = await defaultColorMenu.open();
-            showResult(result);
-        }
-
-        function showResult(color) {
-            const resultDiv = document.getElementById('result');
-            const colorSpan = document.getElementById('selectedColor');
-            const preview = document.getElementById('colorPreview');
-            
-            if (color) {
-                colorSpan.textContent = color;
-                preview.style.backgroundColor = color;
-                resultDiv.style.display = 'block';
-            } else {
-                colorSpan.textContent = 'No color selected (cancelled)';
-                preview.style.backgroundColor = 'transparent';
-                resultDiv.style.display = 'block';
-            }
-        }
+function showResult(color) {
+    const resultDiv = document.getElementById('result');
+    const colorSpan = document.getElementById('selectedColor');
+    const preview = document.getElementById('colorPreview');
+    
+    if (color) {
+        colorSpan.textContent = color;
+        preview.style.backgroundColor = color;
+        resultDiv.style.display = 'block';
+    } else {
+        colorSpan.textContent = 'No color selected (cancelled)';
+        preview.style.backgroundColor = 'transparent';
+        resultDiv.style.display = 'block';
+    }
+}
     </script>
 </body>
 </html>
