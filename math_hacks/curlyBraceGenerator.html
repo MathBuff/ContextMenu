@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Curly Bracket Boxes Explained</title>
+  <script src="https://d3js.org/d3.v3.min.js"></script>
+  <style>
+    /* General page styling */
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      text-align: center;
+      background: #f0f0f0; /* light gray background */
+      margin-top: 50px;
+    }
+
+    /* Styling for the SVG boxes */
+    svg {
+      background: white; /* white box for the braces */
+      margin: 20px;
+      border: 1px solid #aaa; /* gray border around the box */
+    }
+
+    /* Styling for the curly brace path */
+    .curlyBrace {
+      stroke: black;     /* black line */
+      stroke-width: 8px; /* thick line */
+      fill: none;        /* no fill inside the line */
+    }
+  </style>
+</head>
+<body>
+
+<h2>Right and Left Curly Braces in Boxes</h2>
+
+<!-- SVG boxes for left and right braces -->
+<svg id="leftBox" width="200" height="400"></svg>
+<svg id="rightBox" width="200" height="400"></svg>
+
+<script>
+  /**
+   * Function to generate a "curly brace" path for SVG.
+   * 
+   * Parameters:
+   * x1, y1 - coordinates of the top of the brace
+   * x2, y2 - coordinates of the bottom of the brace
+   * w      - how far the curly brace sticks out from the vertical line
+   * q      - curvature adjustment factor (0 < q < 1)
+   * flip   - if true, the brace faces left; if false, it faces right
+   */
+  function makeCurlyBrace(x1, y1, x2, y2, w, q, flip=false) {
+    // Step 1: Find the direction of the vertical line
+    var dx = x2 - x1;  // horizontal difference
+    var dy = y2 - y1;  // vertical difference
+    var len = Math.sqrt(dx*dx + dy*dy); // length of the vertical line
+    dx /= len; // normalize horizontal direction
+    dy /= len; // normalize vertical direction
+
+    // Step 2: Determine which side the brace will curve to
+    var dir = flip ? -1 : 1; // if flip is true, curve left; else curve right
+
+    // Step 3: Calculate the control points for the "Q" curves
+    // Control points determine the curve shape
+    var qx1 = x1 + dir*q*w*dy;
+    var qy1 = y1 - dir*q*w*dx;
+    
+    var qx2 = (x1 + 0.25*len*dx) + dir*(1-q)*w*dy;
+    var qy2 = (y1 + 0.25*len*dy) - dir*(1-q)*w*dx;
+    
+    var tx1 = (x1 + 0.5*len*dx) + dir*w*dy;  // middle point of brace curve
+    var ty1 = (y1 + 0.5*len*dy) - dir*w*dx;
+    
+    var qx3 = x2 + dir*q*w*dy;
+    var qy3 = y2 - dir*q*w*dx;
+    
+    var qx4 = (x1 + 0.75*len*dx) + dir*(1-q)*w*dy;
+    var qy4 = (y1 + 0.75*len*dy) - dir*(1-q)*w*dx;
+
+    // Step 4: Construct the SVG path string
+    // M = move to starting point
+    // Q = quadratic Bezier curve
+    // T = smooth curve continuation
+    var path = `
+      M ${x1} ${y1} 
+      Q ${qx1} ${qy1} ${qx2} ${qy2} 
+      T ${tx1} ${ty1}
+
+      M ${x2} ${y2} 
+      Q ${qx3} ${qy3} ${qx4} ${qy4} 
+      T ${tx1} ${ty1}
+    `;
+
+    return path;
+  }
+
+  // ===========================
+  // Draw right-facing curly brace
+  // ===========================
+  var svgRight = d3.select("#rightBox"); // select the right box
+  svgRight.append("path")                 // add a path element
+          .attr("class", "curlyBrace")   // apply curly brace styling
+          .attr("d", makeCurlyBrace(50, 50, 50, 350, 50, 0.6)); // call function
+
+  // ===========================
+  // Draw left-facing curly brace
+  // ===========================
+  var svgLeft = d3.select("#leftBox"); // select the left box
+  svgLeft.append("path")                // add a path element
+         .attr("class", "curlyBrace")  // apply curly brace styling
+         .attr("d", makeCurlyBrace(150, 50, 150, 350, 50, 0.6, true)); // flip=true
+</script>
+
+</body>
+</html>
+

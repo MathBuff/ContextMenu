@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>&lt;br&gt; behavior demo</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; padding: 24px; line-height: 1.4; }
+    h1 { margin-bottom: 12px; }
+    .panel { border: 1px solid #ccc; padding: 12px; margin-bottom: 18px; border-radius: 6px; background: #fafafa; }
+    .label { font-weight: 700; margin-bottom: 8px; display: block; }
+    .inline { display: inline; background: #e6f7ff; padding: 4px 8px; margin: 0 4px 4px 0; border-radius: 4px; }
+    /* Visual helper for where the line break exists */
+    .marker { color: #888; font-size: 12px; margin-left: 6px; }
+
+    /* Flex demo */
+    .flex-container { display: flex; flex-wrap: nowrap; align-items: flex-start; gap: 6px; }
+    .flex-container .inline { background: #fff0f6; }
+
+    /* Flex with wrap enabled to show alternative behavior */
+    .flex-wrap-container { display: flex; flex-wrap: wrap; gap: 6px; border-top: 1px dashed #ddd; margin-top: 12px; padding-top: 12px; }
+    .note { font-size: 13px; color: #555; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h1>&lt;br&gt; behavior in different containers</h1>
+
+  <div class="panel" id="normal">
+    <span class="label"><strong>Normal block div</strong> — &lt;br&gt; creates a real line break</span>
+    <div>
+      <span class="inline">one</span>
+      <span class="inline">two</span>
+      <br>
+      <span class="inline">three</span>
+      <span class="inline">four</span>
+      <span class="marker">← line break between "two" and "three"</span>
+    </div>
+  </div>
+
+  <div class="panel" id="flex">
+    <span class="label"><strong>Flex container</strong> — &lt;br&gt; becomes inline/anonymous inside flex; typically does not force a new flex line</span>
+    <div class="flex-container">
+      <span class="inline">one</span>
+      <span class="inline">two</span>
+      <br>
+      <span class="inline">three</span>
+      <span class="inline">four</span>
+      <span class="marker">← you may see no forced new row here</span>
+    </div>
+
+    <div class="note">
+      If you enable wrapping the flex items will wrap based on width and not because of &lt;br&gt;.
+    </div>
+
+    <div class="flex-wrap-container" aria-hidden="true">
+      <span class="inline">one</span>
+      <span class="inline">two</span>
+      <br>
+      <span class="inline">three</span>
+      <span class="inline">four</span>
+      <span class="marker">← flex-wrap: wrap controls wrapping here</span>
+    </div>
+  </div>
+
+  <div class="panel" id="tips">
+    <span class="label"><strong>Tips</strong></span>
+    <ul>
+      <li>Use &lt;br&gt; for semantic inline line breaks inside normal text content.</li>
+      <li>Avoid using &lt;br&gt; to control layout inside display:flex; use flex-wrap, widths, or block elements instead.</li>
+      <li>To force a new row in flex reliably add a block-level element sized 100% width or toggle flex-wrap on the container.</li>
+    </ul>
+  </div>
+</body>
+</html>
+

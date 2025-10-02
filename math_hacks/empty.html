@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Empty Span with Space</title>
+<style>
+.EmptyBlock:empty::before {
+    content: "\00a0"; /* non-breaking space */
+    border: 1px dashed lightgray;
+
+}
+
+/* optional: visualize the span */
+.EmptyBlock {
+
+
+}
+
+</style>
+</head>
+<body>
+
+<p>This is before
+    <span class="EmptyBlock">
+        <span>Is this empty?</span>
+    </span>after.
+</p>
+
+<p>This is before<span class="EmptyBlock"></span>after.</p> <!-- this works as intended -->
+
+<p>This has text<span class="EmptyBlock">X</span>inside.</p>
+
+</body>
+</html>
+

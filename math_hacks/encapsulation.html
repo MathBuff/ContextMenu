@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stretchy Parentheses Example</title>
+<style>
+body {
+  background: black;
+  color: white;
+  font-family: monospace;
+}
+/*--------------------------------------------------*/
+.encapsulationBlockWrapper {
+  display: inline-flex;
+  align-items: stretch;
+}
+
+.encapsulatedContentRegion {
+  padding: 0 0.25ch;
+}
+
+.leftEncapsulationSymbolRegion,
+.rightEncapsulationSymbolRegion {
+  display: flex;
+  align-items: center;
+  font-size: 2em;
+  padding: 0 5px;
+  position: relative;
+  color: white;
+}
+
+.leftEncapsulationSymbolRegion::before,
+.rightEncapsulationSymbolRegion::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0.3em;
+  border-style: solid;
+  border-color: currentColor;
+}
+
+/*--------------------------------------------------*/
+
+/* Parentheses (_) */
+.leftEncapsulationSymbolRegion.paren::before {
+  content: '';
+  position: absolute;
+  left: 0.2em;
+  top: 0;
+  height: 50%;
+  width: 0.3em;
+  border: 0.04em solid currentColor;
+  border-bottom: none;
+  border-right: none;
+  border-radius: 0.4em 0 0 0;
+}
+
+.leftEncapsulationSymbolRegion.paren::after {
+  content: '';
+  position: absolute;
+  left: 0.2em;
+  bottom: 0;
+  height: 50%;
+  width: 0.3em;
+  border: 0.04em solid currentColor;
+  border-top: none;
+  border-right: none;
+  border-radius: 0 0 0 0.4em;
+}
+
+.rightEncapsulationSymbolRegion.paren::before {
+  content: '';
+  position: absolute;
+  right: 0.2em;
+  top: 0;
+  height: 50%;
+  width: 0.3em;
+  border: 0.04em solid currentColor;
+  border-bottom: none;
+  border-left: none;
+  border-radius: 0 0.4em 0 0;
+}
+
+.rightEncapsulationSymbolRegion.paren::after {
+  content: '';
+  position: absolute;
+  right: 0.2em;
+  bottom: 0;
+  height: 50%;
+  width: 0.3em;
+  border: 0.04em solid currentColor;
+  border-top: none;
+  border-left: none;
+  border-radius: 0 0 0.4em 0;
+}
+
+/* Square brackets [_] */
+.leftEncapsulationSymbolRegion.square::before {
+  left: 0.2em;
+  border-width: 0.04em 0 0.04em 0.04em;
+}
+
+.rightEncapsulationSymbolRegion.square::before {
+  right: 0.2em;
+  border-width: 0.04em 0.04em 0.04em 0;
+}
+
+/* Curly braces {_} */
+/* Disable the border when curly is active */
+.leftEncapsulationSymbolRegion.curly::before,
+.rightEncapsulationSymbolRegion.curly::before {
+  border: none;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+  content: '';
+}
+
+/* Left curly SVG - embedded as data URL */
+.leftEncapsulationSymbolRegion.curly::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 100' preserveAspectRatio='none'%3E%3Cpath d='M 25 0 Q 20 0 20 5 L 20 40 Q 20 45 15 47.5 Q 10 50 15 52.5 Q 20 55 20 60 L 20 95 Q 20 100 25 100' fill='none' stroke='white' stroke-width='5'/%3E%3C/svg%3E");
+}
+
+/* Right curly SVG - embedded as data URL */
+.rightEncapsulationSymbolRegion.curly::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 100' preserveAspectRatio='none'%3E%3Cpath d='M 5 0 Q 10 0 10 5 L 10 40 Q 10 45 15 47.5 Q 20 50 15 52.5 Q 10 55 10 60 L 10 95 Q 10 100 5 100' fill='none' stroke='white' stroke-width='5'/%3E%3C/svg%3E");
+}
+
+/* Key override: make the parent span stretch when curly */
+.leftEncapsulationSymbolRegion.curly,
+.rightEncapsulationSymbolRegion.curly {
+  align-items: stretch !important;
+  align-self: stretch;
+}
+
+/* Angle brackets < > */
+.leftEncapsulationSymbolRegion.angle,
+.rightEncapsulationSymbolRegion.angle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2em;
+  padding: 0 5px;
+  color: white;
+  position: relative;
+}
+
+
+.leftEncapsulationSymbolRegion.angle::before {
+  content: '';
+  display: block;
+  width: 0.2em;
+  height: 50%; /* stretches with parent */
+  background: currentColor;
+  clip-path: polygon(0.00% 50.00%, 100.00% 0.00%, 100.00% 10.00%, 20.00% 50.00%, 100.00% 90.00%, 100.00% 100.00%);
+}
+
+.rightEncapsulationSymbolRegion.angle::before {
+  content: '';
+  display: block;
+  width: 0.2em;
+  height: 50%;
+  background: currentColor;
+  clip-path: polygon(100.00% 50.00%, 0.00% 0.00%, 0.00% 10.00%, 80.00% 50.00%, 0.00% 90.00%, 0.00% 100.00%);
+}
+
+/* Double lines ||_|| */
+.leftEncapsulationSymbolRegion.double::before {
+  left: 0.15em;
+  border-width: 0 0 0 0.04em;
+  width: 0;
+}
+
+.leftEncapsulationSymbolRegion.double::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0.3em;
+  border-left: 0.04em solid currentColor;
+}
+
+.rightEncapsulationSymbolRegion.double::before {
+  right: 0.15em;
+  border-width: 0 0.04em 0 0;
+  width: 0;
+}
+
+.rightEncapsulationSymbolRegion.double::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0.3em;
+  border-right: 0.04em solid currentColor;
+}
+
+/*Single Lines |_|*/
+.leftEncapsulationSymbolRegion.single::before {
+  left: 0.2em;
+  border-width: 0 0 0 0.04em;
+  width: 0;
+}
+
+.rightEncapsulationSymbolRegion.single::before {
+  right: 0.2em;
+  border-width: 0 0.04em 0 0;
+  width: 0;
+}
+
+
+
+
+
+
+</style>
+</head>
+<body>
+<span class="encapsulationBlockWrapper">
+  <span class="leftEncapsulationSymbolRegion paren"></span>
+  <span class="encapsulatedContentRegion">Parenthesis </span>
+  <span class="rightEncapsulationSymbolRegion paren"></span>
+</span>
+
+<span class="encapsulationBlockWrapper">
+  <span class="leftEncapsulationSymbolRegion square"></span>
+  <span class="encapsulatedContentRegion">Square Brackets </span>
+  <span class="rightEncapsulationSymbolRegion square"></span>
+</span>
+
+<span class="encapsulationBlockWrapper">
+  <span class="leftEncapsulationSymbolRegion curly"></span>
+  <span class="encapsulatedContentRegion">CurlyBraces </span>
+  <span class="rightEncapsulationSymbolRegion curly"></span>
+</span>
+
+<span class="encapsulationBlockWrapper">
+  <span class="leftEncapsulationSymbolRegion angle"></span>
+  <span class="encapsulatedContentRegion">Angle Brackets</span>
+  <span class="rightEncapsulationSymbolRegion angle"></span>
+</span>
+
+<span class="encapsulationBlockWrapper">
+  <span class="leftEncapsulationSymbolRegion double"></span>
+  <span class="encapsulatedContentRegion">Double Lines</span>
+  <span class="rightEncapsulationSymbolRegion double"></span>
+</span>
+
+<span class="encapsulationBlockWrapper">
+  <span class="leftEncapsulationSymbolRegion single"></span>
+  <span class="encapsulatedContentRegion">Single Lines</span>
+  <span class="rightEncapsulationSymbolRegion single"></span>
+</span>
+
+<script>
+//Here is a crazy cool helper I made to force clipping of an angle shape and its reflection
+function pointsToPolygonString(points) {
+    if (!points || points.length === 0) return "";
+
+    // Find max x and max y to convert to percentages
+    let maxX = Math.max(...points.map(p => p.x));
+    let maxY = Math.max(...points.map(p => p.y));
+
+    // Generate polygon string
+    const coords = points.map(p => {
+        const xPercent = maxX === 0 ? 0 : (p.x / maxX * 100).toFixed(2) + "%";
+        const yPercent = maxY === 0 ? 0 : (p.y / maxY * 100).toFixed(2) + "%";
+        return `${xPercent} ${yPercent}`;
+    });
+
+    return `polygon(${coords.join(", ")})`;
+}
+
+//auto calculate left angle function
+function textToParagraph(text) {
+  const p = document.createElement('p');
+  p.textContent = text;
+  document.body.appendChild(p);
+}
+
+// Function to append points as paragraphs
+function displayPoints(points) {
+  let i = 1;
+  points.forEach(point => {
+    const p = document.createElement('p');
+    p.textContent = `Point${i}: (x: ${point.x}, y: ${point.y})`;
+    document.body.appendChild(p);
+    i++;
+  });
+}
+
+
+let a = 50;
+let b = 100;
+let b_s = 20;
+let a_s = (a / b) * b_s; // 50 / 100 * 14 = 7
+
+let points = [];
+
+//calculated points to rightward angle bracket
+points.push({ x: 0, y: a });         
+points.push({ x: b, y: 0 });         
+points.push({ x: b, y: a_s });        
+points.push({ x: b_s, y: a });        
+points.push({ x: b, y: 2 * a - a_s }); 
+points.push({ x: b, y: 2 * a });   
+
+textToParagraph("< points");
+textToParagraph(pointsToPolygonString(points));
+//displayPoints(points);
+   
+//calculating points to the leftward angle bracket
+points = [];
+
+points.push({ x: b, y: a });         
+points.push({ x: 0, y: 0 });         
+points.push({ x: 0, y: a_s });        
+points.push({ x: b - b_s, y: a });        
+points.push({ x: 0, y: 2 * a - a_s }); 
+points.push({ x: 0, y: 2 * a }); 
+
+textToParagraph("> points") 
+textToParagraph(pointsToPolygonString(points));
+//displayPoints(points);
+
+
+</script>
+
+
+
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fraction Example</title>
+  <style>
+body{
+    background-color: black;
+    font-family: monospace;
+    color: white;
+}
+
+/*-----------------------------------------------------------------*/
+
+.EmptyBlock:empty::before {
+    content: "\00a0"; /* non-breaking space */
+    border: 1px dashed lightgray;
+
+}
+
+/* optional: visualize the span */
+.EmptyBlock {
+
+
+}
+
+/*-----------------------------------------------------------------*/
+  .fraction {
+    display: inline-block;
+    text-align: center;
+    vertical-align: middle;
+  }
+  .fraction > .numerator,
+  .fraction > .denominator {
+    display: block;
+    padding: 0 4px;
+  }
+  .fraction > .denominator {
+    border-top: 1px solid white;
+  }
+
+.fraction > .numerator {
+  margin-bottom: 2px; /* space between numerator and fraction line */
+}
+
+  /* Make nested fractions line up inline instead of stacking */
+  .numerator span,
+  .denominator span {
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  </style>
+</head>
+<body>
+<p>---------------------------------------</p>
+    <span class="fraction">
+
+        <span class="numerator">
+            <span class="EmptyBlock"></span>
+        </span>
+
+        <span class="denominator">
+            <span class="EmptyBlock"></span>
+        </span>
+
+    </span>
+<p>---------------------------------------</p>
+
+<span class="fraction"><span class="numerator"><span class="EmptyBlock ContentStringBlueOutline scrollTarget">&nbsp;</span></span><span class="denominator"><span class="EmptyBlock">&nbsp;</span></span></span>
+
+
+</body>
+</html>
+
